@@ -1,0 +1,16 @@
+logging:
+  level: "info"
+
+server:
+  port: 8080
+
+templates:
+  path: "templates"
+
+repositories:
+  default: "huggingface"
+  options:
+    huggingface:
+      url: "https://huggingface.co"
+    custom:
+      url: "https://custom.git.repo"
