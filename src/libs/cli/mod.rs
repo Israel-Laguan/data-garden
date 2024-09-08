@@ -3,15 +3,16 @@ pub mod env;
 pub mod logger;
 pub mod types;
 
-use clap::{App, Arg, ArgMatches};
 use crate::libs::cli::{env::apply_env, logger::init_logger};
-use config::read_config;
+use crate::libs::local_fs::{check_disk_space, file_exists};
+use clap::{App, Arg, ArgMatches};
 
 pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let matches = parse_args();
 
     if std::env::args().len() == 1 {
-        println!(r"
+        println!(
+            r"
         ______        ____   ,---------.    ____              .-_'''-.      ____    .-------.     ______         .-''-.  ,---.   .--. 
         |    _ `''.  .'  __ `.\          \ .'  __ `.          '_( )_   \   .'  __ `. |  _ _   \   |    _ `''.   .'_ _   \ |    \  |  | 
         | _ | ) _  \/   '  \  \`--.  ,---'/   '  \  \        |(_ o _)|  ' /   '  \  \| ( ' )  |   | _ | ) _  \ / ( ` )   '|  ,  \ |  | 
@@ -22,7 +23,8 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
         |       .'  \ (_ o _) /   (_I_)   \ (_ o _) /          \        / \ (_ o _) /|  |  \    / |       .'    \       / |  |    |  | 
         '-----'`     '.(_,_).'    '---'    '.(_,_).'            `'-...-'   '.(_,_).' ''-'   `'-'  '-----'`       `'-..-'  '--'    '--' 
                                                                                                                                        
-        ");
+        "
+        );
         return Ok(());
     }
 
@@ -34,8 +36,9 @@ pub fn run() -> Result<(), Box<dyn std::error::Error>> {
     let is_quiet = matches.is_present("quiet");
     init_logger(is_quiet);
 
-    apply_env();
+    let project_name = matches.value_of("project-folder").unwrap_or_default();
 
+    apply_env();
 
     if let Some(project_name) = matches.value_of("init") {
         init_project(project_name)?;
@@ -53,36 +56,54 @@ fn parse_args() -> ArgMatches {
         .version(env!("CARGO_PKG_VERSION"))
         .author("Israel Laguan <israellaguan@gmail.com>")
         .about("Processes datasets using different templates")
-        .arg(Arg::new("server")
-            .short('s')
-            .long("server")
-            .takes_value(false)
-            .help("Start in server mode"))
-        .arg(Arg::new("process")
-            .short('p')
-            .long("process")
-            .takes_value(true)
-            .help("Process a dataset"))
-        .arg(Arg::new("quiet")
-            .short('q')
-            .long("quiet")
-            .takes_value(false)
-            .help("Run quietly with minimal output"))
-        .arg(Arg::new("init")
-            .short('i')
-            .long("init")
-            .takes_value(true)
-            .help("Initialize a new project"))
-        .arg(Arg::new("version")
-            .short('v')
-            .long("version")
-            .takes_value(false)
-            .help("Show version information"))
-        .arg(Arg::new("help")
-            .short('h')
-            .long("help")
-            .takes_value(false)
-            .help("Show help information"))
+        .arg(
+            Arg::new("server")
+                .short('s')
+                .long("server")
+                .takes_value(false)
+                .help("Start in server mode"),
+        )
+        .arg(
+            Arg::new("project-folder")
+                .short('f')
+                .takes_value(true)
+                .help("Name of the project in snake case"),
+        )
+        .arg(
+            Arg::new("process")
+                .short('p')
+                .long("process")
+                .takes_value(true)
+                .help("Process a dataset"),
+        )
+        .arg(
+            Arg::new("quiet")
+                .short('q')
+                .long("quiet")
+                .takes_value(false)
+                .help("Run quietly with minimal output"),
+        )
+        .arg(
+            Arg::new("init")
+                .short('i')
+                .long("init")
+                .takes_value(true)
+                .help("Initialize a new project"),
+        )
+        .arg(
+            Arg::new("version")
+                .short('v')
+                .long("version")
+                .takes_value(false)
+                .help("Show version information"),
+        )
+        .arg(
+            Arg::new("help")
+                .short('h')
+                .long("help")
+                .takes_value(false)
+                .help("Show help information"),
+        )
         .get_matches()
 }
 
@@ -100,8 +121,15 @@ fn init_project(project_name: &str) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn process_dataset(dataset_path: &str) -> Result<(), Box<dyn std::error::Error>> {
-    // Dataset processing logic here
-    println!("Dataset located in: {dataset_path}");
+    let home_path = "/home/israelllaguan/";
+    let available_space = check_disk_space(home_path);
+
+    println!(
+        "Available space in {}: {} bytes",
+        home_path, available_space
+    );
+    let dataset_file_exists = file_exists(dataset_path);
+    println!("Dataset located in: {dataset_path} {dataset_file_exists}");
     Ok(())
 }
 
